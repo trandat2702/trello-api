@@ -1,5 +1,5 @@
 import { MongoClient, ServerApiVersion } from 'mongodb'
-import { env } from './config/environment.js'
+import { env } from '~/config/environment'
 
 //https://www.mongodb.com/docs/drivers/node/current/connect/mongoclient/#connection-guide
 //Khởi tạo một đối tượng trelloDatabase ban đầu là null (chưa kết nối)
