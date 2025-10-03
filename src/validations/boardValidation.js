@@ -4,13 +4,13 @@ import { StatusCodes } from 'http-status-codes'
 
 const createNew = async (req, res, next) => {
   const correctCondition = Joi.object({
-    title: Joi.string().required().min(3).max(50).trim().strict().message({
+    title: Joi.string().required().min(3).max(50).trim().strict().messages({
       //https://stackoverflow.com/questions/48720942/node-js-joi-how-to-display-a-custom-error-messages/68092831#68092831 tài liệu tham khảo khi custom message cho Joi
       //https://github.com/hapijs/joi/blob/master/lib/types/string.js#L694
       'any.required': 'Title is required',
       'string.empty': 'Title is not allowed to be empty',
-      'string.min': 'Title must be at least {#3} characters',
-      'string.max': 'Title must be less than or equal to {#50} characters',
+      'string.min': 'Title must be at least {#limit} characters',
+      'string.max': 'Title must be less than or equal to {#limit} characters',
       'string.trim': 'Title must not have leading or trailing spaces'
     }),
     description: Joi.string().required().min(3).max(256).trim().strict()

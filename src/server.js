@@ -13,11 +13,10 @@ const START_SERVER = () => {
   app.use('/v1', APIs_V1)
 
   app.listen(env.APP_PORT, env.APP_HOST, () => {
-    // eslint-disable-next-line no-console
-    console.log(`Hello , I am running at http://${env.APP_HOST}:${env.APP_PORT}/`)
+    console.log(`⚡ Fast relaaaaoad at http://${env.APP_HOST}:${env.APP_PORT}/`)
   })
-  //Gói thư viện chúng ta sẽ dùng cho việc Cleanup truoc khi dừng Server
-  //https://www.npmjs.com/package/async-exit-hook
+
+  // Graceful shutdown
   exitHook(() => {
     console.log('4. Đang ngắt kết nối tới MongoDB Cloud Atlas...')
     CLOSE_DB()

@@ -1,0 +1,23 @@
+{
+   "watch": ["src/routes/**/*", "src/controllers/**/*"],
+  "ignore": ["src/config/**/*", "src/models/**/*"],
+  "ext": "js,json,env",
+  "exec": "babel-node ./src/server.js",
+  "env": {
+    "NODE_ENV": "development",
+    "DEBUG": "trello:*"
+  },
+  "legacyWatch": true,
+  "polling": false,
+  "delay": 200,
+  "verbose": false,
+  "restartable": "rs",
+  "events": {
+    "restart": "echo '🔄 [Trello API] Quick restart...'",
+    "start": "echo '🚀 [Trello API] Starting...'",
+    "crash": "echo '💥 [Trello API] Crashed - waiting...'"
+  },
+  "colours": true,
+  "runOnChangeOnly": true,
+  "signal": "SIGUSR2"
+}
