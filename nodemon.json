@@ -1,23 +1,19 @@
 {
-   "watch": ["src/routes/**/*", "src/controllers/**/*"],
-  "ignore": ["src/config/**/*", "src/models/**/*"],
-  "ext": "js,json,env",
-  "exec": "babel-node ./src/server.js",
-  "env": {
-    "NODE_ENV": "development",
-    "DEBUG": "trello:*"
-  },
-  "legacyWatch": true,
-  "polling": false,
-  "delay": 200,
+  "watch": ["src"],
+  "ext": "js,json",
+  "ignore": ["build", "node_modules"],
+  "exec": "babel-node src/server.js",
+  "delay": "250",
+  "quiet": true,
   "verbose": false,
   "restartable": "rs",
-  "events": {
-    "restart": "echo '🔄 [Trello API] Quick restart...'",
-    "start": "echo '🚀 [Trello API] Starting...'",
-    "crash": "echo '💥 [Trello API] Crashed - waiting...'"
+  "env": {
+    "NODE_ENV": "development"
   },
-  "colours": true,
-  "runOnChangeOnly": true,
-  "signal": "SIGUSR2"
+  "events": {
+    "start": "node -e \"console.log('▶️  Server started at', new Date().toLocaleString())\"",
+    "restart": "node -e \"console.log('↻  Restarted at', new Date().toLocaleString())\"",
+    "crash": "node -e \"console.error('💥  App crashed - waiting for file changes to restart')\"",
+    "quit": "node -e \"console.log('✖  Nodemon quit')\""
+  }
 }

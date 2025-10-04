@@ -5,6 +5,7 @@ import exitHook from 'async-exit-hook'
 import { CONNECT_DB, CLOSE_DB } from '~/config/mongodb'
 import { env } from '~/config/environment'
 import { APIs_V1 } from '~/routes/v1/index'
+import { errorHandlingMiddleware } from '~/middlewares/errorHandlingMiddleware'
 const START_SERVER = () => {
   const app = express()
   //Enable req.body json data
@@ -12,11 +13,15 @@ const START_SERVER = () => {
   //Mount our router to /v1
   app.use('/v1', APIs_V1)
 
-  app.listen(env.APP_PORT, env.APP_HOST, () => {
-    console.log(`⚡ Fast relaaaaoad at http://${env.APP_HOST}:${env.APP_PORT}/`)
-  })
+  //Middleware xử lý lỗi tập trung
+  app.use(errorHandlingMiddleware)
 
-  // Graceful shutdown
+  app.listen(env.APP_PORT, env.APP_HOST, () => {
+    // eslint-disable-next-line no-console
+    console.log(`Hello , I am running at http://${env.APP_HOST}:${env.APP_PORT}/`)
+  })
+  //Gói thư viện chúng ta sẽ dùng cho việc Cleanup truoc khi dừng Server
+  //https://www.npmjs.com/package/async-exit-hook
   exitHook(() => {
     console.log('4. Đang ngắt kết nối tới MongoDB Cloud Atlas...')
     CLOSE_DB()
