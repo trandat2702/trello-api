@@ -19,6 +19,9 @@ const COLUMN_COLLECTION_SCHEMA = Joi.object({
   updatedAt: Joi.date().timestamp('javascript').default(null),
   _destroy: Joi.boolean().default(false)
 })
+
+// Các trường không được phép cập nhật
+const INVALID_UPDATE_FIELDS = ['_id', 'boardId', 'createdAt']
 const validateBeforeCreate = async (data) => {
   return await COLUMN_COLLECTION_SCHEMA.validateAsync(data, { abortEarly: false })
 }
@@ -41,7 +44,7 @@ const findOneById = async (id) => {
   } catch (error) { throw new Error(error) }
 }
 
-
+//Dùng $push trong mongoDB ở trường hợp này đẩy 1 phần tử vào cuối mảng
 const pushCardOrderIds = async (card) => {
   try {
     const result = await GET_DB().collection(COLUMN_COLLECTION_NAME).findOneAndUpdate(
@@ -49,7 +52,47 @@ const pushCardOrderIds = async (card) => {
       { $push: { cardOrderIds: new ObjectId(card._id) } },
       { returnDocument: 'after' }
     )
-    return result.value
+    return result
+  } catch (error) { throw new Error(error) }
+}
+// link tham khảo https://www.mongodb.com/docs/manual/reference/operator/update/pull/#mongodb-update-up.-pull
+//Dùng $pull để lấy 1 phần tử ra khỏi mảng rồi xoá nó đi
+const pullCardOrderIds = async (card) => {
+  try {
+    const result = await GET_DB().collection(COLUMN_COLLECTION_NAME).findOneAndUpdate(
+      { _id: new ObjectId(card.columnId) },
+      { $pull: { cardOrderIds: new ObjectId(card._id) } },
+      { returnDocument: 'after' }
+    )
+    return result
+  } catch (error) { throw new Error(error) }
+}
+
+const update = async (columnId, updateData) => {
+  try {
+    //Lọc ra những cái field không được phép cập nhật linh tinh
+    Object.keys(updateData).forEach(key => {
+      if (INVALID_UPDATE_FIELDS.includes(key)) {
+        delete updateData[key]
+      }
+    })
+    // Đối với những dữ liệu liên quan đến ObjectId thì cần convert chúng về dạng ObjectId
+    if (updateData.cardOrderIds) {
+      updateData.cardOrderIds = updateData.cardOrderIds.map(id => new ObjectId(id))
+    }
+    const result = await GET_DB().collection(COLUMN_COLLECTION_NAME).findOneAndUpdate(
+      { _id: new ObjectId(columnId) },
+      { $set: updateData }, // chỉ ghi đè những field được phép
+      { returnDocument: 'after' } // trả về kết quả mới sau khi cập nhập
+    )
+    return result
+  } catch (error) { throw new Error(error) }
+}
+
+const deleteOneById = async (ColumnId) => {
+  try {
+    const result = await GET_DB().collection(COLUMN_COLLECTION_NAME).deleteOne({ _id: new ObjectId(ColumnId) })
+    return result
   } catch (error) { throw new Error(error) }
 }
 export const columnModel = {
@@ -57,5 +100,8 @@ export const columnModel = {
   COLUMN_COLLECTION_SCHEMA,
   createNew,
   findOneById,
-  pushCardOrderIds
+  pushCardOrderIds,
+  update,
+  deleteOneById,
+  pullCardOrderIds
 }

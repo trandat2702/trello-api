@@ -17,6 +17,8 @@ const CARD_COLLECTION_SCHEMA = Joi.object({
   updatedAt: Joi.date().timestamp('javascript').default(null),
   _destroy: Joi.boolean().default(false)
 })
+
+const INVALID_UPDATE_FIELDS = ['_id', 'boardId', 'createdAt']
 const validateBeforeCreate = async (data) => {
   return await CARD_COLLECTION_SCHEMA.validateAsync(data, { abortEarly: false })
 }
@@ -39,9 +41,39 @@ const findOneById = async (id) => {
     return result
   } catch (error) { throw new Error(error) }
 }
+const update = async (cardId, updateData) => {
+  try {
+    //Lọc ra những cái field không được phép cập nhật linh tinh
+    Object.keys(updateData).forEach(key => {
+      if (INVALID_UPDATE_FIELDS.includes(key)) {
+        delete updateData[key]
+      }
+    })
+
+    //Đối với những dữ liệu liên quan đến ObjectId thì chúng ta cần convert nó về dạng ObjectId trước khi lưu
+    if (updateData.columnId) {
+      updateData.columnId = new ObjectId(updateData.columnId)
+    }
+    const result = await GET_DB().collection(CARD_COLLECTION_NAME).findOneAndUpdate(
+      { _id: new ObjectId(cardId) },
+      { $set: updateData }, // chỉ ghi đè những field được phép
+      { returnDocument: 'after' } // trả về kết quả mới sau khi cập nhập
+    )
+    return result
+  } catch (error) { throw new Error(error) }
+}
+
+const deleteManyByColumnId = async (columnId) => {
+  try {
+    const result = await GET_DB().collection(CARD_COLLECTION_NAME).deleteMany({ columnId: new ObjectId(columnId) })
+    return result
+  } catch (error) { throw new Error(error) }
+}
 export const cardModel = {
   CARD_COLLECTION_NAME,
   CARD_COLLECTION_SCHEMA,
   createNew,
-  findOneById
+  findOneById,
+  update,
+  deleteManyByColumnId
 }

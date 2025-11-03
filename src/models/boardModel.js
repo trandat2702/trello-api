@@ -22,6 +22,9 @@ const BOARD_COLLECTION_SCHEMA = Joi.object({
   _destroy: Joi.boolean().default(false)
 })
 
+// Các trường không được phép cập nhật
+const INVALID_UPDATE_FIELDS = ['_id', 'createdAt']
+
 const validateBeforeCreate = async (data) => {
   return await BOARD_COLLECTION_SCHEMA.validateAsync(data, { abortEarly: false })
 }
@@ -81,15 +84,35 @@ const pushColumnOrderIds = async (column) => {
       { $push: { columnOrderIds: new ObjectId(column._id) } },
       { returnDocument: 'after' }
     )
-    return result.value
+    return result
   } catch (error) { throw new Error(error) }
 }
-
+const update = async (boardId, updateData) => {
+  try {
+    //Lọc ra những cái field không được phép cập nhật linh tinh
+    Object.keys(updateData).forEach(key => {
+      if (INVALID_UPDATE_FIELDS.includes(key)) {
+        delete updateData[key]
+      }
+    })
+    // Đối với những dữ liệu liên quan đến ObjectId thì cần convert chúng về dạng ObjectId
+    if (updateData.columnOrderIds) {
+      updateData.columnOrderIds = updateData.columnOrderIds.map(id => new ObjectId(id))
+    }
+    const result = await GET_DB().collection(BOARD_COLLECTION_NAME).findOneAndUpdate(
+      { _id: new ObjectId(boardId) },
+      { $set: updateData }, // chỉ ghi đè những field được phép
+      { returnDocument: 'after' } // trả về kết quả mới sau khi cập nhập
+    )
+    return result
+  } catch (error) { throw new Error(error) }
+}
 export const boardModel = {
   BOARD_COLLECTION_NAME,
   BOARD_COLLECTION_SCHEMA,
   createNew,
   findOneById,
   getDetails,
-  pushColumnOrderIds
+  pushColumnOrderIds,
+  update
 }
