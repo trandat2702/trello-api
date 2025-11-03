@@ -20,13 +20,26 @@ const START_SERVER = () => {
   //Middleware xử lý lỗi tập trung
   app.use(errorHandlingMiddleware)
 
-  app.listen(env.APP_PORT, env.APP_HOST, () => {
-    // eslint-disable-next-line no-console
-    console.log(`Hello , I am running at http://${env.APP_HOST}:${env.APP_PORT}/`)
-  })
+  //Môi trường production
+  if (env.BUILD_MODE === 'production') {
+    app.listen(process.env.PORT, () => {
+      // eslint-disable-next-line no-console
+      console.log(`Production , I am running at Port:${process.env.PORT}`)
+    })
+  }
+  //Môi trường development
+  else {
+    app.listen(env.LOCAL_DEV_APP_PORT, env.LOCAL_DEV_APP_HOST, () => {
+      // eslint-disable-next-line no-console
+      console.log(`Development , I am running at http://${env.LOCAL_DEV_APP_HOST}:${env.LOCAL_DEV_APP_PORT}/`)
+    })
+  }
+
   //Gói thư viện chúng ta sẽ dùng cho việc Cleanup truoc khi dừng Server
   //https://www.npmjs.com/package/async-exit-hook
   exitHook(() => {
+    console.log('3. exitHook được gọi! Stack trace:')
+    console.trace()
     console.log('4. Đang ngắt kết nối tới MongoDB Cloud Atlas...')
     CLOSE_DB()
     console.log('5. Đã ngắt kết nối tới MongoDB Cloud Atlas')
@@ -37,12 +50,13 @@ const START_SERVER = () => {
 //Immediately Invoked Function Expression (IIFE) (Biểu thức hàm được gọi ngay lập tức)
 (async () => {
   try {
-    console.log('Đang kết nối tới MongoDB...')
+    console.log('1. Đang kết nối tới MongoDB...')
     await CONNECT_DB()
-    console.log('Kết nối MongoDB thành công!')
+    console.log('2. Kết nối MongoDB thành công!')
     START_SERVER()
+    console.log('3. START_SERVER() đã hoàn thành!')
   } catch (error) {
-    console.error('Kết nối MongoDB thất bại:', error)
-    process.exit(0)
+    console.error('❌ Kết nối MongoDB thất bại:', error)
+    process.exit(1)
   }
 })()
