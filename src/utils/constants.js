@@ -3,7 +3,7 @@ export const WHITELIST_DOMAINS = [
   // 'http://localhost:5173'
   // //Không cần localhost vì ở file
   // config/cors.js chúng ta đã luôn luôn cho phép môi trường dev truy cập rồi
-  'https://trello-web-pro-mu.vercel.app/'
+  'https://trello-web-pro-mu.vercel.app'
 ]
 export const BOARD_TYPES = {
   PUBLIC: 'public',
