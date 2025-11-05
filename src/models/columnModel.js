@@ -55,18 +55,6 @@ const pushCardOrderIds = async (card) => {
     return result
   } catch (error) { throw new Error(error) }
 }
-// link tham khảo https://www.mongodb.com/docs/manual/reference/operator/update/pull/#mongodb-update-up.-pull
-//Dùng $pull để lấy 1 phần tử ra khỏi mảng rồi xoá nó đi
-const pullCardOrderIds = async (card) => {
-  try {
-    const result = await GET_DB().collection(COLUMN_COLLECTION_NAME).findOneAndUpdate(
-      { _id: new ObjectId(card.columnId) },
-      { $pull: { cardOrderIds: new ObjectId(card._id) } },
-      { returnDocument: 'after' }
-    )
-    return result
-  } catch (error) { throw new Error(error) }
-}
 
 const update = async (columnId, updateData) => {
   try {
@@ -102,6 +90,5 @@ export const columnModel = {
   findOneById,
   pushCardOrderIds,
   update,
-  deleteOneById,
-  pullCardOrderIds
+  deleteOneById
 }

@@ -53,6 +53,8 @@ const update = async (boardId, reqBody) => {
     return updatedBoard
   } catch (error) { throw error }
 }
+
+
 //Khi di chuyển card giữa 2 column khác nhau
 const moveCardBetweenColumns = async (reqBody) => {
   try {
