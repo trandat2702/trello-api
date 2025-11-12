@@ -6,6 +6,8 @@ import { v4 as uuidv4 } from 'uuid'
 import { pickUser } from '~/utils/formatters'
 import { WEBSITE_DOMAMIN } from '~/utils/constants.js'
 import { BrevoProvider } from '~/providers/BrevoProvider'
+import { env } from '~/config/environment.js'
+import { jwtProvider } from '~/providers/JwtProvider.js'
 const createNew = async (reqBody) => {
   try {
     //Kiểm tra xem email đã tồn tại trong hệ thống chúng ta hay chưa
@@ -19,7 +21,7 @@ const createNew = async (reqBody) => {
     const nameFromEmail = reqBody.email.split('@')[0]
     const newUser = {
       email: reqBody.email,
-      password: await bcrypt.hash(reqBody.password, 8), //Mã hóa password trước khi lưu vào Database, tham số thứ 2 là độ phức tạp, giá trị càng cao thì băm càng lâu
+      password: await bcrypt.hashSync(reqBody.password, 8), //Mã hóa password trước khi lưu vào Database, tham số thứ 2 là độ phức tạp, giá trị càng cao thì băm càng lâu
       username: nameFromEmail,
       displayName: nameFromEmail, //Mặc định để giống username khi user đăng ký mới, về sau làm tính năm update cho user
       verifyToken: uuidv4() //Tạo token ngẫu nhiên để gửi cho user xác thực email
@@ -36,6 +38,7 @@ const createNew = async (reqBody) => {
     <h3>${verificationLink}</h3>
     <h3>Nếu bạn không đăng ký tài khoản, vui lòng bỏ qua email này.</h3>
     `
+
     //Gọi tới cái Provider gửi mail
     await BrevoProvider.sendEmail(
       getNewUser.email,
@@ -47,6 +50,71 @@ const createNew = async (reqBody) => {
     return pickUser(getNewUser)
   } catch (error) { throw error }
 }
+
+const verifyAccount = async (repBody) => {
+  try {
+    //Tìm user trong hệ thống với email và token
+    const existUser = await userModel.findOneByEmail(repBody.email)
+
+    //Các bước kiểm tra cần thiết
+    if (!existUser) {
+      throw new ApiError(StatusCodes.NOT_FOUND, 'User không tồn tại trong hệ thống')
+    }
+    if (existUser.isActive) {
+      throw new ApiError(StatusCodes.NOT_ACCEPTABLE, 'Tài khoản đã được kích hoạt trước đó, vui lòng đăng nhập để sử dụng dịch vụ')
+    }
+    if (repBody.token !== existUser.verifyToken) {
+      throw new ApiError(StatusCodes.NOT_ACCEPTABLE, 'Token xác thực không hợp lệ, vui lòng kiểm tra lại email xác thực của bạn')
+    }
+    // Nếu như mọi thứ ok thì chúng ta bắt đầu update lại thông tin của thằng user để verify tài khoản
+    const updateData = {
+      isActive: true,
+      verifyToken: null //Xác thực xong thì ta xóa token đi
+    }
+    //Thực hiện update thông tin user trong database
+    const updatedUser = await userModel.update(existUser._id, updateData)
+
+    return pickUser(updatedUser)
+  }
+  catch (error) { throw error }
+}
+
+const login = async (repBody) => {
+  try {
+    //Query user trong Database
+    const existUser = await userModel.findOneByEmail(repBody.email)
+    //Các bước kiểm tra cần thiết
+    if (!existUser) {
+      throw new ApiError(StatusCodes.NOT_FOUND, 'User không tồn tại trong hệ thống')
+    }
+    if (!existUser.isActive) {
+      throw new ApiError(StatusCodes.NOT_ACCEPTABLE, 'Tài khoản chưa được kích hoạt, vui lòng kiểm tra email để xác thực tài khoản')
+    }
+    if (bcrypt.compareSync(repBody.password, existUser.password) === false) {
+      throw new ApiError(StatusCodes.NOT_ACCEPTABLE, 'Mật khẩu không đúng, vui lòng thử lại')
+    }
+    //Nếu mọi thứ ok thì bắt đầu tạo Tokens đăng nhập để trả về phía FE
+    //Tạo thông tin để đính kèm trong JWT Token bao gồm _id và email cho user
+    const userInfo = { _id: existUser._id, email: existUser.email }
+    //Tạo ra 2 loại token, accessToken và refreshToken để trả về cho phía FE
+    const accessToken = await jwtProvider.generateToken(
+      userInfo,
+      env.ACCESS_TOKEN_SECRET_SIGNATURE,
+      env.ACCESS_TOKEN_LIFE
+    )
+
+    const refreshToken = await jwtProvider.generateToken(
+      userInfo,
+      env.REFRESH_TOKEN_SECRET_SIGNATURE,
+      env.REFRESH_TOKEN_LIFE
+    )
+    //Trả về thông tin của user kèm theo 2 cái token vừa tạo ra
+    return { accessToken, refreshToken, ...pickUser(existUser) }
+  }
+  catch (error) { throw error }
+}
 export const userService = {
-  createNew
+  createNew,
+  verifyAccount,
+  login
 }
