@@ -38,8 +38,6 @@ const START_SERVER = () => {
   //Gói thư viện chúng ta sẽ dùng cho việc Cleanup truoc khi dừng Server
   //https://www.npmjs.com/package/async-exit-hook
   exitHook(() => {
-    console.log('3. exitHook được gọi! Stack trace:')
-    console.trace()
     console.log('4. Đang ngắt kết nối tới MongoDB Cloud Atlas...')
     CLOSE_DB()
     console.log('5. Đã ngắt kết nối tới MongoDB Cloud Atlas')

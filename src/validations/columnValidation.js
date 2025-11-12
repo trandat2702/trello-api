@@ -43,7 +43,6 @@ const update = async (req, res, next) => {
 
 
 const deleteItem = async (req, res, next) => {
-  //Lưu ý không bắt buộc các trường khi update
   const correctCondition = Joi.object({
     id: Joi.string().pattern(OBJECT_ID_RULE).message(OBJECT_ID_RULE_MESSAGE)
   })
