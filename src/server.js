@@ -7,9 +7,19 @@ import exitHook from 'async-exit-hook'
 import { CONNECT_DB, CLOSE_DB } from '~/config/mongodb'
 import { env } from '~/config/environment'
 import { APIs_V1 } from '~/routes/v1/index'
+import cookieParser from 'cookie-parser'
 import { errorHandlingMiddleware } from '~/middlewares/errorHandlingMiddleware'
 const START_SERVER = () => {
   const app = express()
+  //Fix cái vụ Cache from disk của Express
+  //https://stackoverflow.com/questions/22632593/how-to-disable-webpage-caching-in-expressjs-nodejs/53240717#53240717
+  //Không dùng cái này thì khi FE gọi API mà BE trả về dữ liệu cũ từ cache
+  app.use((req, res, next) => {
+    res.set('Cache-Control', 'no-store')
+    next()
+  })
+  //Cấu hình cookie-parser middleware, không có thì lúc be đọc req gửi lên thì req.cookies = undefined
+  app.use(cookieParser())
   //Xử lý CORS
   app.use(cors(corsOptions)) //Cho phép tất cả các nguồn (origin) truy cập API
   //Enable req.body json data
