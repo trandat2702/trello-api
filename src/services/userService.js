@@ -66,11 +66,13 @@ const verifyAccount = async (repBody) => {
     if (repBody.token !== existUser.verifyToken) {
       throw new ApiError(StatusCodes.NOT_ACCEPTABLE, 'Token xác thực không hợp lệ, vui lòng kiểm tra lại email xác thực của bạn')
     }
+
     // Nếu như mọi thứ ok thì chúng ta bắt đầu update lại thông tin của thằng user để verify tài khoản
     const updateData = {
       isActive: true,
       verifyToken: null //Xác thực xong thì ta xóa token đi
     }
+
     //Thực hiện update thông tin user trong database
     const updatedUser = await userModel.update(existUser._id, updateData)
 
@@ -100,13 +102,14 @@ const login = async (repBody) => {
     const accessToken = await jwtProvider.generateToken(
       userInfo,
       env.ACCESS_TOKEN_SECRET_SIGNATURE,
-      //5 //5 giây
+      // 5
       env.ACCESS_TOKEN_LIFE
     )
 
     const refreshToken = await jwtProvider.generateToken(
       userInfo,
       env.REFRESH_TOKEN_SECRET_SIGNATURE,
+      // 100
       env.REFRESH_TOKEN_LIFE
     )
     //Trả về thông tin của user kèm theo 2 cái token vừa tạo ra
@@ -114,8 +117,61 @@ const login = async (repBody) => {
   }
   catch (error) { throw error }
 }
+
+const refreshToken = async (clientRefreshToken) => {
+  try {
+    // Bước 01: Thực hiện giải mã refreshToken xem nó có hợp lệ hay là không
+    const refreshTokenDecoded = await jwtProvider.verifyToken(
+      clientRefreshToken,
+      env.REFRESH_TOKEN_SECRET_SIGNATURE
+    )
+
+    // Đoạn này vì chúng ta chỉ lưu những thông tin unique và cố định của user trong token rồi, vì vậy có thể lấy luôn từ decoded ra, tiết kiệm query vào DB để lấy data mới.
+    const userInfo = { _id: refreshTokenDecoded._id, email: refreshTokenDecoded.email }
+
+    // Bước 02: Tạo ra cái accessToken mới
+    const accessToken = await jwtProvider.generateToken(
+      userInfo,
+      env.ACCESS_TOKEN_SECRET_SIGNATURE,
+      // 5
+      env.ACCESS_TOKEN_LIFE
+    )
+
+    return { accessToken }
+  } catch (error) { throw error }
+}
+const update = async (userId, reqBody) => {
+  try {
+    // Query User và kiểm tra cho chắc chắn
+    const existUser = await userModel.findOneById(userId)
+    if (!existUser) { throw new ApiError(StatusCodes.NOT_FOUND, 'User không tồn tại trong hệ thống') }
+    if (!existUser.isActive) { throw new ApiError(StatusCodes.NOT_ACCEPTABLE, 'Tài khoản chưa được kích hoạt, vui lòng kiểm tra email để xác thực tài khoản') }
+    // Khởi tạo kết quả updated User ban đầu là empty
+    let updatedUser = {}
+
+    //Trường hợp changed password
+    if (reqBody.current_password && reqBody.new_password) {
+      //Kiểm tra current_password có đúng không
+      if (!bcrypt.compareSync(reqBody.current_password, existUser.password)) {
+        throw new ApiError(StatusCodes.NOT_ACCEPTABLE, 'Mật khẩu hiện tại không đúng, vui lòng thử lại')
+      }
+      // Nếu như current_password đúng thì chúng ta sẽ hash một cái mật khẩu mới và update lại vào DB
+      updatedUser = await userModel.update(userId, {
+        password: await bcrypt.hashSync(reqBody.new_password, 8)
+      })
+    }
+    else {
+      // Trường hợp chỉ update các thông tin chung, ví dụ như displayName
+      updatedUser = await userModel.update(userId, reqBody)
+    }
+
+    return pickUser(updatedUser)
+  } catch (error) { throw error }
+}
 export const userService = {
   createNew,
   verifyAccount,
-  login
+  login,
+  refreshToken,
+  update
 }
