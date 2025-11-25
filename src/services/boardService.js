@@ -6,6 +6,7 @@ import { StatusCodes } from 'http-status-codes'
 import { cloneDeep } from 'lodash'
 import { columnModel } from '~/models/columnModel'
 import { cardModel } from '~/models/cardModel'
+import { DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE } from '~/utils/constants'
 const createNew = async (reqBody) => {
   // eslint-disable-next-line no-useless-catch
   try {
@@ -77,9 +78,19 @@ const moveCardBetweenColumns = async (reqBody) => {
   } catch (error) { throw error }
 }
 
+const getBoards = async (userId, page, itemsPerPage) => {
+  try {
+    //Nếu không tồn tại page hoặc itemsPerPage từ phía FE thì BE sẽ cần phải luôn gán giá trị mặc định
+    if (!page) page = DEFAULT_PAGE
+    if (!itemsPerPage) itemsPerPage = DEFAULT_ITEMS_PER_PAGE
+    const boards = await boardModel.getBoards(userId, page, itemsPerPage)
+    return boards
+  } catch (error) { throw error }
+}
 export const boardService = {
   createNew,
   getDetails,
   update,
-  moveCardBetweenColumns
+  moveCardBetweenColumns,
+  getBoards
 }

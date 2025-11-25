@@ -6,8 +6,9 @@ import { v4 as uuidv4 } from 'uuid'
 import { pickUser } from '~/utils/formatters'
 import { WEBSITE_DOMAMIN } from '~/utils/constants.js'
 import { BrevoProvider } from '~/providers/BrevoProvider'
-import { env } from '~/config/environment.js'
-import { jwtProvider } from '~/providers/JwtProvider.js'
+import { env } from '~/config/environment'
+import { jwtProvider } from '~/providers/JwtProvider'
+import { CloudinaryProvider } from '~/providers/CloudinaryProvider'
 const createNew = async (reqBody) => {
   try {
     //Kiểm tra xem email đã tồn tại trong hệ thống chúng ta hay chưa
@@ -140,7 +141,7 @@ const refreshToken = async (clientRefreshToken) => {
     return { accessToken }
   } catch (error) { throw error }
 }
-const update = async (userId, reqBody) => {
+const update = async (userId, reqBody, userAvatarFile) => {
   try {
     // Query User và kiểm tra cho chắc chắn
     const existUser = await userModel.findOneById(userId)
@@ -158,6 +159,16 @@ const update = async (userId, reqBody) => {
       // Nếu như current_password đúng thì chúng ta sẽ hash một cái mật khẩu mới và update lại vào DB
       updatedUser = await userModel.update(userId, {
         password: await bcrypt.hashSync(reqBody.new_password, 8)
+      })
+    }
+    else if (userAvatarFile) {
+      //Trường hợp upload file lên Cloud Storage, cụ thể là Cloudinary
+      const uploadResult = await CloudinaryProvider.streamUpload(userAvatarFile.buffer, 'users')
+      // console.log('🚀 ~ update ~ uploadResult:', uploadResult)
+
+      //Lưu lại url của cái file ảnh vào trong database
+      updatedUser = await userModel.update(userId, {
+        avatar: uploadResult.secure_url
       })
     }
     else {
