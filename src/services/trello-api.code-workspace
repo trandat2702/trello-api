@@ -6,5 +6,8 @@
     {
       "path": "../../../trello-web"
     }
-  ]
+  ],
+  "settings": {
+    "liveServer.settings.multiRootWorkspaceName": "trello-api"
+  }
 }

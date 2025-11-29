@@ -1,6 +1,7 @@
 // import ApiError from "~/utils/ApiError"
 import { cardModel } from '~/models/cardModel'
 import { columnModel } from '~/models/columnModel'
+import { CloudinaryProvider } from '~/providers/CloudinaryProvider'
 const createNew = async (reqBody) => {
   try {
     const newCard = {
@@ -15,13 +16,30 @@ const createNew = async (reqBody) => {
     return getNewCard
   } catch (error) { throw error }
 }
-const update = async (cardId, reqBody) => {
+const update = async (cardId, reqBody, cardCoverFile, userInfo) => {
   try {
+    let updatedCard = {}
     const updateData = {
       ...reqBody,
       updatedAt: Date.now()
     }
-    const updatedCard = await cardModel.update(cardId, updateData)
+    if (cardCoverFile) {
+      const uploadResult = await CloudinaryProvider.streamUpload(cardCoverFile.buffer, 'card-covers')
+      updatedCard = await cardModel.update(cardId, { cover: uploadResult.secure_url })
+    }
+    else if (updateData.commentToAdd) {
+      // Tạo dữ liệu comment để thêm vào Database, cần bổ sung thêm những field cần thiết
+      const commentData = {
+        ...updateData.commentToAdd,
+        commentedAt: Date.now(),
+        userId: userInfo._id,
+        userEmail: userInfo.email
+      }
+      updatedCard = await cardModel.unshiftNewComment(cardId, commentData)
+    }
+    else {
+      updatedCard = await cardModel.update(cardId, updateData)
+    }
     return updatedCard
   }
   catch (error) { throw error }

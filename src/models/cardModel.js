@@ -77,6 +77,31 @@ const update = async (cardId, updateData) => {
   } catch (error) { throw new Error(error) }
 }
 
+/**
+ *Đây một phần tử comment vào đầu mảng comments!
+  Trong JS, ngược lại với push(thêm phần tử vào cuối mảng) sẽ là unshift (thêm phần tử vào đầu mảng)
+  Nhưng trong mongodb hiện tại chỉ có $push - mặc định đẩy phần tử vào cuối mảng
+  vẫn dùng $push, nhưng bọc data vào Array để trong $each và chỉ định $position: 0 để đẩy phần tử vào đầu mảng
+  https://stackoverflow.com/questions/7936019/how-do-i-add-a-value-to-the-top-of-an-array-in-mongodb/25732817#25732817
+  https://www.mongodb.com/docs/manual/reference/operator/update/position/
+ */
+const unshiftNewComment = async (cardId, commentData) => {
+  try {
+    const result = await GET_DB().collection(CARD_COLLECTION_NAME).findOneAndUpdate(
+      { _id: new ObjectId(cardId) },
+      {
+        $push: {
+          comments: {
+            $each: [commentData],
+            $position: 0
+          }
+        }
+      },
+      { returnDocument: 'after' }
+    )
+    return result
+  } catch (error) { throw new Error(error) }
+}
 const deleteManyByColumnId = async (columnId) => {
   try {
     const result = await GET_DB().collection(CARD_COLLECTION_NAME).deleteMany({ columnId: new ObjectId(columnId) })
@@ -89,5 +114,6 @@ export const cardModel = {
   createNew,
   findOneById,
   update,
-  deleteManyByColumnId
+  deleteManyByColumnId,
+  unshiftNewComment
 }
