@@ -14,6 +14,9 @@ Router.route('/verify')
 Router.route('/login')
   .put(userValidation.login, userController.login)
 
+Router.route('/google-login')
+  .post(userController.loginWithGoogle)
+
 Router.route('/logout')
   .delete(userController.logout)
 

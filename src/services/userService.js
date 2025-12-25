@@ -1,3 +1,4 @@
+/* eslint-disable no-lonely-if */
 import { userModel } from '~/models/userModel'
 import ApiError from '~/utils/ApiError'
 import { StatusCodes } from 'http-status-codes'
@@ -9,6 +10,7 @@ import { BrevoProvider } from '~/providers/BrevoProvider'
 import { env } from '~/config/environment'
 import { jwtProvider } from '~/providers/JwtProvider'
 import { CloudinaryProvider } from '~/providers/CloudinaryProvider'
+import { GoogleProvider } from '~/providers/GoogleProvider'
 const createNew = async (reqBody) => {
   try {
     //Kiểm tra xem email đã tồn tại trong hệ thống chúng ta hay chưa
@@ -179,10 +181,75 @@ const update = async (userId, reqBody, userAvatarFile) => {
     return pickUser(updatedUser)
   } catch (error) { throw error }
 }
+const loginWithGoogle = async (googleToken) => {
+  try {
+    // 1.Verify token với Google
+    const googleProfile = await GoogleProvider.verifyGoogleToken(googleToken)
+
+    if (!googleProfile.isVerified) {
+      throw new ApiError(StatusCodes.FORBIDDEN, 'Email chưa được Google xác thực')
+    }
+
+    // 2.Tìm user theo googleId hoặc email
+    let existUser = await userModel.findOneByGoogleId(googleProfile.googleId)
+    if (!existUser) {
+      existUser = await userModel.findOneByEmail(googleProfile.email)
+    }
+
+    // 3. Nếu chưa có user, tạo mới
+    if (!existUser) {
+      const nameFromEmail = googleProfile.email.split('@')[0]
+      const newUser = {
+        email: googleProfile.email,
+        username: nameFromEmail,
+        displayName: googleProfile.displayName,
+        avatar: googleProfile.avatar,
+        googleId: googleProfile.googleId,
+        authType: 'google',
+        isActive: true, // Auto active vì Google đã verify
+        verifyToken: null
+      }
+      const createdUser = await userModel.createNew(newUser)
+      existUser = await userModel.findOneById(createdUser.insertedId)
+    }
+
+    else {
+      // 4. Nếu user đã tồn tại nhưng chưa có googleId, update thêm
+      if (!existUser.googleId) {
+        await userModel.update(existUser._id, {
+          googleId: googleProfile.googleId,
+          authType: 'google',
+          isActive: true,
+          avatar: existUser.avatar || googleProfile.avatar
+        })
+        existUser.googleId = googleProfile.googleId
+      }
+    }
+
+    // 5. Tạo JWT tokens
+    const userInfo = { _id: existUser._id, email: existUser.email }
+    const accessToken = await jwtProvider.generateToken(
+      userInfo,
+      env.ACCESS_TOKEN_SECRET_SIGNATURE,
+      env.ACCESS_TOKEN_LIFE
+    )
+
+    const refreshToken = await jwtProvider.generateToken(
+      userInfo,
+      env.REFRESH_TOKEN_SECRET_SIGNATURE,
+      env.REFRESH_TOKEN_LIFE
+    )
+
+    return { accessToken, refreshToken, ...pickUser(existUser) }
+  }
+  catch (error) { throw error }
+}
+
 export const userService = {
   createNew,
   verifyAccount,
   login,
   refreshToken,
-  update
+  update,
+  loginWithGoogle
 }

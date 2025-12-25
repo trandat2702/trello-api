@@ -13,12 +13,19 @@ const USER_ROLES = {
 const USER_COLLECTION_NAME = 'users'
 const USER_COLLECTION_SCHEMA = Joi.object({
   email: Joi.string().required().pattern(EMAIL_RULE).message(EMAIL_RULE_MESSAGE), // unique
-  password: Joi.string().required(),
+  password: Joi.string().when('authType', {
+    is: 'local',
+    then: Joi.required(),
+    otherwise: Joi.optional()
+  }),
   // username cắt ra từ email sẽ có khả năng không unique bởi vì sẽ có những tên email trùng nhau nhưng từ các nhà cung cấp khác nhau
   username: Joi.string().required().trim().strict(),
   displayName: Joi.string().required().trim().strict(),
   avatar: Joi.string().default(null),
   role: Joi.string().valid(...Object.values(USER_ROLES)).default(USER_ROLES.CLIENT),
+
+  googleId: Joi.string().default(null),
+  authType: Joi.string().valid('local', 'google').default('local'),
 
   isActive: Joi.boolean().default(false),
   verifyToken: Joi.string(),
@@ -57,6 +64,14 @@ const findOneByEmail = async (emailValue) => {
   } catch (error) { throw new Error(error) }
 }
 
+const findOneByGoogleId = async (googleId) => {
+  try {
+    const result = await GET_DB().collection(USER_COLLECTION_NAME).findOne({ googleId: googleId })
+    return result
+  }
+  catch (error) { throw new Error(error) }
+}
+
 const update = async (userId, updateData) => {
   try {
     // Lọc những field mà chúng ta không cho phép cập nhật linh tinh
@@ -82,5 +97,6 @@ export const userModel = {
   createNew,
   findOneById,
   findOneByEmail,
+  findOneByGoogleId,
   update
 }
