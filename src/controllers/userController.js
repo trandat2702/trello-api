@@ -46,6 +46,30 @@ const login = async (req, res, next) => {
   } catch (error) { next(error) }
 }
 
+const loginWithGoogle = async (req, res, next) => {
+  try {
+    const { googleToken } = req.body
+
+    const result = await userService.loginWithGoogle(googleToken)
+
+    // Set cookies giống login thường
+    res.cookie('accessToken', result.accessToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'none',
+      maxAge: ms('14d')
+    })
+
+    res.cookie('refreshToken', result.refreshToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'none',
+      maxAge: ms('14d')
+    })
+
+    res.status(StatusCodes.OK).json(result)
+  } catch (error) { next(error) }
+}
 const logout = async (req, res, next) => {
   try {
     // Xóa cookie - đơn giản là làm ngược lại so với việc gán cookie ở hàm login
@@ -88,5 +112,6 @@ export const userController = {
   login,
   logout,
   refreshToken,
-  update
+  update,
+  loginWithGoogle
 }
