@@ -83,8 +83,8 @@ const getDetails = async (userId, boardId) => {
         // tài liệu tham khảo https://www.mongodb.com/docs/v7.0/reference/operator/aggregation/lookup/
         $lookup: {
           from: columnModel.COLUMN_COLLECTION_NAME,
-          localField: '_id',
-          foreignField: 'boardId',
+          localField: '_id', // khóa ngoại của bảng hiện tại
+          foreignField: 'boardId', //khóa chính của bảng cần join
           as: 'columns'
         }
       },
@@ -168,7 +168,7 @@ const update = async (boardId, updateData) => {
   } catch (error) { throw new Error(error) }
 }
 
-const getBoards = async (userId, page, itemsPerPage) => {
+const getBoards = async (userId, page, itemsPerPage, queryFilters) => {
   try {
     const queryCondition = [
       //Điều kiện 1: Board chưa bị xoá
@@ -181,7 +181,18 @@ const getBoards = async (userId, page, itemsPerPage) => {
         ]
       }
     ]
-
+    // Xử lý query filter cho từng trường hợp search board, ví dụ search title
+    if (queryFilters) {
+      Object.keys(queryFilters).forEach(key => {
+        //queryFilters[key] ví dụ queryFilters[title] nếu phía FE đẩy lên q[title]
+        //Có phân biệt phân biệt hoa thường
+        // queryCondition.push({ [key]: { $regex: (queryFilters[key]) } })
+        //Không phân biệt hoa thường
+        queryCondition.push({ [key]: { $regex: new RegExp(queryFilters[key], 'i') } })
+      }
+      )
+    }
+    // console.log('queryCondition', queryCondition)
     const query = await GET_DB().collection(BOARD_COLLECTION_NAME).aggregate(
       [
         { $match: { $and: queryCondition } },

@@ -24,11 +24,12 @@ const USER_COLLECTION_SCHEMA = Joi.object({
   avatar: Joi.string().default(null),
   role: Joi.string().valid(...Object.values(USER_ROLES)).default(USER_ROLES.CLIENT),
 
+  // Đăng nhập bằng Google OAuth
   googleId: Joi.string().default(null),
   authType: Joi.string().valid('local', 'google').default('local'),
 
   isActive: Joi.boolean().default(false),
-  verifyToken: Joi.string(),
+  verifyToken: Joi.string().allow(null),
 
   createdAt: Joi.date().timestamp('javascript').default(Date.now),
   updatedAt: Joi.date().timestamp('javascript').default(null),
