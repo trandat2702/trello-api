@@ -23,3 +23,9 @@ yarn-debug.log*
 yarn-error.log*
 
 .env
+
+# Yarn Berry / PnP files (Yarn v2+)
+.yarn/
+.pnp.cjs
+.pnp.loader.mjs
+yarn.lock
