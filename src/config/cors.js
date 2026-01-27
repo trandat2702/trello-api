@@ -13,6 +13,13 @@ export const corsOptions = {
     if (env.BUILD_MODE === 'dev') {
       return callback(null, true)
     }
+
+    // Trường hợp origin là undefined (ví dụ: request từ Postman, server-side, mobile app...)
+    // Cho phép trong production nếu cần, hoặc bạn có thể bỏ dòng này nếu muốn chặt chẽ hơn
+    if (!origin) {
+      return callback(null, true)
+    }
+
     //Ngược lại nếu là môi trường production thì sẽ kiểm tra kỹ lưỡng hơn
     //env.BUILD_MODE === 'production'
     // Kiểm tra xem origin có phải là domain được chấp nhận hay không
