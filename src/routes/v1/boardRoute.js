@@ -10,6 +10,7 @@ Router.route('/')
 Router.route('/:id')
   .get(authMiddleware.isAuthorized, boardController.getDetails)
   .put(authMiddleware.isAuthorized, boardValidation.update, boardController.update)
+  .delete(authMiddleware.isAuthorized, boardController.deleteBoard)
 
 //API hỗ trợ di chuyển Card giữa các Column
 Router.route('/supports/moving_card')
