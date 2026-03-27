@@ -11,7 +11,7 @@ export const BOARD_TYPES = {
   PRIVATE: 'private'
 }
 
-export const WEBSITE_DOMAMIN = (env.BUILD_MODE === 'production') ? env.WEBSITE_DOMAIN_PRODUCTION : env.WEBSITE_DOMAIN_DEVLOPMENT
+export const WEBSITE_DOMAMIN = 'https://trello-web-pro-mu.vercel.app'
 
 export const DEFAULT_PAGE = 1
 export const DEFAULT_ITEMS_PER_PAGE = 12
