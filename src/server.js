@@ -14,6 +14,7 @@ import { errorHandlingMiddleware } from '~/middlewares/errorHandlingMiddleware'
 import http from 'http'
 import socketIo from 'socket.io'
 import { inviteUserToBoardSocket } from '~/sockets/inviteUserToBoardSocket'
+import { boardSocket } from '~/sockets/boardSocket'
 const START_SERVER = () => {
   const app = express()
   //Fix cái vụ Cache from disk của Express
@@ -41,6 +42,7 @@ const START_SERVER = () => {
   io.on('connection', (socket) => {
     // Gọi các socket tùy theo tính năng ở đây.
     inviteUserToBoardSocket(socket)
+    boardSocket(socket)
 
     // ...vv
   })
