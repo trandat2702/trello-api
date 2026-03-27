@@ -136,6 +136,13 @@ const updateMembers = async (cardId, incomingMemberInfo) => {
     return result
   } catch (error) { throw new Error(error) }
 }
+const deleteManyByBoardId = async (boardId) => {
+  try {
+    const result = await GET_DB().collection(CARD_COLLECTION_NAME).deleteMany({ boardId: new ObjectId(boardId) })
+    return result
+  } catch (error) { throw new Error(error) }
+}
+
 export const cardModel = {
   CARD_COLLECTION_NAME,
   CARD_COLLECTION_SCHEMA,
@@ -143,6 +150,7 @@ export const cardModel = {
   findOneById,
   update,
   deleteManyByColumnId,
+  deleteManyByBoardId,
   unshiftNewComment,
   updateMembers
 }
