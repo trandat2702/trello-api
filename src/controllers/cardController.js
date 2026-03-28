@@ -16,6 +16,7 @@ const update = async (req, res, next) => {
     res.status(StatusCodes.OK).json(updatedCard)
   } catch (error) { next(error) }
 }
+
 export const cardController = {
   createNew,
   update

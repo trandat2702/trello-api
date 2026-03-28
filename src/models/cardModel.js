@@ -17,6 +17,12 @@ const CARD_COLLECTION_SCHEMA = Joi.object({
   memberIds: Joi.array().items(
     Joi.string().pattern(OBJECT_ID_RULE).message(OBJECT_ID_RULE_MESSAGE)
   ).default([]),
+  // Mảng chứa các mã màu nhãn dán
+  labels: Joi.array().items(Joi.string()).default([]),
+
+  // Thời gian hết hạn của Card (sử dụng Timestamp chuẩn)
+  dueDate: Joi.date().timestamp('javascript').default(null),
+
   //Dữ liệu comments của Card chúng ta sẽ học cách nhúng - embedded vào bản ghi Card luôn như dưới đây:
   comments: Joi.array().items({
     userId: Joi.string().pattern(OBJECT_ID_RULE).message(OBJECT_ID_RULE_MESSAGE),

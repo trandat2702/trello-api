@@ -34,4 +34,5 @@ const streamUpload = (fileBuffer, folderName) => {
     streamifier.createReadStream(fileBuffer).pipe(stream)
   })
 }
+
 export const CloudinaryProvider = { streamUpload }
